@@ -45,10 +45,11 @@ Pick an instance ID (e.g. `12345678`) from the output, then rent it:
 
 ```bash
 vastai create instance 12345678 \
-  --image pytorch/pytorch:2.1.0-cuda12.1-cudnn8-devel \
+  --image vastai/pytorch \
   --disk 50 \
   --ssh \
-  --direct
+  --direct \
+  --onstart-cmd "pip install -q bert-score blobfile datasets 'huggingface-hub==0.4.0' mpi4py nltk pandas protobuf rouge-score sacrebleu sacremoses scikit-learn scipy spacy tokenizers torchmetrics tqdm 'transformers==4.18.0' jupyterlab ipykernel 2>&1 | tee /root/pip_install.log"
 ```
 
 ### Get the SSH connection details:
@@ -112,18 +113,15 @@ scp -i ~/.ssh/vastai_key \
 
 ---
 
-## 6. Install Python dependencies on the instance
+## 6. Check packages are installed
 
-SSH into the instance and install the NLP packages (PyTorch is pre-installed in the Docker image):
+The `--onstart-cmd` from step 3 installs packages automatically as soon as the instance boots — while you upload files in step 5. Check it finished:
 
 ```bash
-ssh vastai "pip install -q \
-  bert-score blobfile datasets 'huggingface-hub==0.4.0' \
-  mpi4py nltk pandas protobuf rouge-score sacrebleu \
-  sacremoses scikit-learn scipy spacy tokenizers \
-  torchmetrics tqdm 'transformers==4.18.0' \
-  jupyterlab ipykernel"
+ssh vastai "tail /root/pip_install.log"
 ```
+
+You should see `Successfully installed transformers-4.18.0 ...` at the end. If the log doesn't exist yet, wait 1–2 minutes and try again.
 
 ---
 
