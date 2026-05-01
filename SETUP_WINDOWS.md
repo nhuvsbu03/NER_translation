@@ -68,8 +68,7 @@ vastai create instance 12345678 `
   --image vastai/pytorch `
   --disk 50 `
   --ssh `
-  --direct `
-  --onstart-cmd "pip install -q bert-score blobfile datasets 'huggingface-hub==0.4.0' mpi4py nltk pandas protobuf rouge-score sacrebleu sacremoses scikit-learn scipy spacy tokenizers torchmetrics tqdm 'transformers==4.18.0' jupyterlab ipykernel 2>&1 | tee /root/pip_install.log"
+  --direct
 ```
 
 > **Note:** PowerShell uses a backtick `` ` `` for line continuation, not `\`.
@@ -137,14 +136,9 @@ scp -i ~/.ssh/vastai_key -P <PORT> \
 
 ---
 
-## 6. Check pip install finished
+## 6. Install Python dependencies
 
-Back in PowerShell, check that the background pip install (started in step 3) is done:
-```powershell
-ssh vastai "tail /root/pip_install.log"
-```
-
-You should see something like `Successfully installed transformers-4.18.0 ...`.
+The notebook's Phase 1 cell handles this automatically when you run it. It installs all required NLP packages (~2 minutes).
 
 ---
 

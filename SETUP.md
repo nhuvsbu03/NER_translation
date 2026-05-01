@@ -48,8 +48,7 @@ vastai create instance 12345678 \
   --image vastai/pytorch \
   --disk 50 \
   --ssh \
-  --direct \
-  --onstart-cmd "pip install -q bert-score blobfile datasets 'huggingface-hub==0.4.0' mpi4py nltk pandas protobuf rouge-score sacrebleu sacremoses scikit-learn scipy spacy tokenizers torchmetrics tqdm 'transformers==4.18.0' jupyterlab ipykernel 2>&1 | tee /root/pip_install.log"
+  --direct
 ```
 
 ### Get the SSH connection details:
@@ -113,15 +112,9 @@ scp -i ~/.ssh/vastai_key \
 
 ---
 
-## 6. Check packages are installed
+## 6. Install Python dependencies
 
-The `--onstart-cmd` from step 3 installs packages automatically as soon as the instance boots — while you upload files in step 5. Check it finished:
-
-```bash
-ssh vastai "tail /root/pip_install.log"
-```
-
-You should see `Successfully installed transformers-4.18.0 ...` at the end. If the log doesn't exist yet, wait 1–2 minutes and try again.
+The notebook's Phase 1 cell handles this automatically when you run it. It installs all required NLP packages (~2 minutes).
 
 ---
 
