@@ -1,0 +1,4 @@
+out/
+*.log
+*.csv
+inference_out/
