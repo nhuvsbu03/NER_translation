@@ -37,8 +37,9 @@ Remote-Mkdir "/root/SeqDiffuSeq"
 
 $seqDir = Join-Path $ProjectRoot "SeqDiffuSeq"
 foreach ($item in Get-ChildItem $seqDir) {
-    if ($item.Name -in @("ckpts", "data", "out", "__pycache__", ".git")) { continue }
+    if ($item.Name -in @("ckpts", "data", "out", "log", "logs", "logger", "__pycache__", ".git")) { continue }
     if ($item.Extension -in @(".pt", ".npy")) { continue }
+    Write-Host "    $($item.Name)"
     if ($item.PSIsContainer) {
         Scp-Dir $item.FullName "/root/SeqDiffuSeq/$($item.Name)"
     } else {
