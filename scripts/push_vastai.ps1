@@ -24,7 +24,10 @@ function Scp-File($src, $dst) {
     scp -q "$src" "${Remote}:$dst"
 }
 
-# ── Clone repo on instance ------------------------------------------------
+# ── Setup instance --------------------------------------------------------
+Write-Host "==> Installing git on instance..."
+Remote-Run "apt-get install -y -q git"
+
 Write-Host "==> Cloning repo on instance..."
 Remote-Run "if [ -d /root/NER_translation ]; then cd /root/NER_translation && git pull; else git clone $GitRepo /root/NER_translation; fi"
 
