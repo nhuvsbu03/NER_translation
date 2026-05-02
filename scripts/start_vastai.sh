@@ -3,7 +3,7 @@
 # Usage: ./scripts/start_vastai.sh
 set -euo pipefail
 
-INSTANCE_ID=36014085
+INSTANCE_ID=36014201
 SSH_ALIAS=vastai
 
 echo "==> Starting instance $INSTANCE_ID…"
