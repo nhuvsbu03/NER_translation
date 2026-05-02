@@ -21,7 +21,7 @@ function Remote-Run($cmd) {
 }
 
 function Scp-File($src, $dst) {
-    scp -q "$src" "${Remote}:$dst"
+    scp "$src" "${Remote}:$dst"
 }
 
 # ── Setup instance --------------------------------------------------------
