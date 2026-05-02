@@ -52,11 +52,14 @@ Target: BLEU (13a) > 15 on full test set (29,253 pairs).
 | `82672549` | Skip venv creation |
 | `d984b02e` | Skip venv pip upgrade |
 | `96c7c840` | Skip torch install, pip install NLP deps only |
+| `a37eff9b` | Added `import shutil` (was missing, caused NameError in data copy cell) |
 | `e75b12a0` | Check for `*_clean.*` files |
 | `99ba7f75` | Copy `*_clean.*` → original names in repo |
-| `c5d1ff36` | BPE vocab `10000` → `32000`, always delete old tokenizer |
+| `49ebe56d` | `DST_DATA_DIR` → `data/en-zh`, `CKPT_DIR` → `ckpts/en-zh` (was `zh_vi`, mismatched training args) |
+| `c5d1ff36` | BPE vocab 32k; train on local `/content/tok_tmp/` SSD (not Drive) directly in notebook kernel; `min_frequency=2` — was 15+ min on Drive, now ~1–2 min |
+| `1d186a49` | Added `BartModel` weights download with `safe_serialization=False` to force `pytorch_model.bin`; cache check changed to `pytorch_model.bin` |
 | `23c64bfb` | `init_pretrained=True`, `vocab_size=32005`, `lr_anneal_steps=100000` |
-| `607671b2` | Inference on full test set (dynamic count), `diffusion_steps=200` |
+| `da5c31a0` | **New cell** — Phase 5 Inference: auto-finds latest EMA checkpoint + time schedule, `diffusion_steps=200`, `num_samples=-1` (full test set) |
 
 ---
 
@@ -88,7 +91,42 @@ Target: BLEU (13a) > 15 on full test set (29,253 pairs).
 
 ## Issues Encountered
 
-_Fill in after run._
+### Bugs fixed before training started
+
+| Issue | Root cause | Fix |
+|-------|-----------|-----|
+| `NameError: shutil not defined` | `import shutil` missing from imports cell | Added to cell `a37eff9b` |
+| `FileNotFoundError: ./data/en_zh/` | Tokenizer called with `en_zh` (underscore) but data dir is `en-zh` (hyphen); `DST_DATA_DIR` was `zh_vi` | Unified all paths to `en-zh` in `DST_DATA_DIR`, `CKPT_DIR`, and tokenizer call |
+| Tokenizer took 15+ min | Tokenizer training read 467k lines directly from Google Drive (high latency) | Train on local `/content/tok_tmp/` SSD; run in notebook kernel not subprocess; `min_frequency=2` |
+| `pytorch_model.bin not found` (Flax weights present) | BART download cell only saved config + tokenizer, not weights; newer transformers saves `model.safetensors` by default | Added `BartModel.from_pretrained(...).save_pretrained(..., safe_serialization=False)` |
+| `AttributeError: no attribute embedding_dim` | `embedding_dim` only set in `if not init_pretrained` block | Fixed in `transformer_model.py`: set `embedding_dim = in_channels` in `else` branch |
+| `mat1 (1024x1024) and mat2 (1536x768)` shape mismatch | `embedding_dim` was wrongly set to `config.d_model=768`; projection built as `Linear(1536,768)` but input is `in_channels*2=1024` | Fixed condition to `config.d_model != embedding_dim` and `embedding_dim = in_channels = 512` |
+| `rsync --delete` wiped `data/en-zh/` on Drive | Push script synced `SeqDiffuSeq/` with `--delete`, deleting Colab-generated files not present locally | Added `--exclude='data/'` and `--exclude='ckpts/'` to `push_gdrive.sh` |
+
+### Clamping collapse at step 3,000 — root cause & fix
+
+Session 02 training collapsed again (loss ~0.07 by step 3,000, same as Session 01). Root cause: `in_channel=512` but BART-base has `d_model=768`, so the custom `BartModel` (which defaults `embedding_dim=512`) couldn't load the pretrained 768-dim embeddings — `ignore_mismatched_sizes=True` silently skipped them. Embeddings remained randomly initialized → same centroid collapse as Session 01.
+
+**Fix**: change `in_channel` to match BART-base exactly.
+
+| Arg | Before | After |
+|-----|--------|-------|
+| `--in_channel` | 512 | **768** |
+| `--out_channel` | 512 | **768** |
+| `--num_channels` | 2048 | **3072** |
+| `--num_heads` | 8 | **12** |
+
+### SeqDiffuSeq source code patched
+
+File: `src/modeling/predictor/transformer_model.py` — four bugs fixed, all in `init_pretrained=True` path which was never tested in the original repo:
+
+| Bug | Fix |
+|-----|-----|
+| `AttributeError: no attribute embedding_dim` | Added `else` branch: `self.embedding_dim = in_channels` |
+| Projection condition wrong (`in_channels != embedding_dim`) | Changed to `config.d_model != embedding_dim` |
+| `input_up_proj_dec` set to Identity when `d_model == embedding_dim` | `input_up_proj_dec` always built as `Linear(embedding_dim*2, d_model)` — self-conditioning always doubles the decoder input |
+| `input_up_proj` used in else branch instead of `input_up_proj_dec`/`input_up_proj_enc` | Renamed to match what forward() calls |
+| `from_pretrained` ignored `embedding_dim` — created 512-dim embedding even with `in_channel=768` | Pass `embedding_dim=self.embedding_dim` to `from_pretrained()` so pretrained 768-dim weights actually load |
 
 ---
 

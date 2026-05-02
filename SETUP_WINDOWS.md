@@ -65,7 +65,7 @@ vastai search offers 'reliability>0.90 num_gpus=1 gpu_ram>=24 inet_up>100 disk_s
 Pick an instance ID from the output (e.g. `12345678`), then rent it:
 ```powershell
 vastai create instance 12345678 `
-  --image vastai/pytorch `
+  --image pytorch/pytorch:1.13.1-cuda11.6-cudnn8-runtime `
   --disk 50 `
   --ssh `
   --direct

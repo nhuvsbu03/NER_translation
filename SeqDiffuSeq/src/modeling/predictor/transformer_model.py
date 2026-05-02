@@ -79,6 +79,9 @@ class TransformerNetModel_encoder_decoder(nn.Module):
             self.config.decoder_ffn_dim = model_channels
             self.embedding_dim = 128 #self.config.d_model // 4
             self.embed_scale = math.sqrt(self.embedding_dim) if self.config.scale_embedding else 1.0
+        else:
+            self.embedding_dim = in_channels
+            self.embed_scale = math.sqrt(self.embedding_dim) if self.config.scale_embedding else 1.0
 
         time_embed_dim = in_channels
         self.time_embed = nn.Sequential(
@@ -109,33 +112,33 @@ class TransformerNetModel_encoder_decoder(nn.Module):
     def build_xstart_predictor(self):
         if self.init_pretrained:
 
-            temp_bart = BartModel.from_pretrained(self.config_name, config=self.config, ignore_mismatched_sizes=True)
+            temp_bart = BartModel.from_pretrained(self.config_name, config=self.config, ignore_mismatched_sizes=True, embedding_dim=self.embedding_dim)
             self.input_transformers = temp_bart
         else:
             self.input_transformers = BartModel(self.config, self.embedding_dim)
 
     def build_input_output_projections(self):
-        if self.in_channels != self.embedding_dim:
-             # need to adapt the model to the embedding size
-            self.input_up_proj_dec = nn.Sequential(
-                nn.Linear(self.embedding_dim * 2, self.config.d_model),
+        # Decoder projection always needed: self-conditioning always concatenates
+        # [x_t; x_0_pred] making input embedding_dim*2 regardless of d_model.
+        self.input_up_proj_dec = nn.Sequential(
+            nn.Linear(self.embedding_dim * 2, self.config.d_model),
+            nn.Tanh(),
+            nn.Linear(self.config.d_model, self.config.d_model),
+        )
+
+        if self.config.d_model != self.embedding_dim:
+            self.input_up_proj_enc = nn.Sequential(
+                nn.Linear(self.embedding_dim, self.config.d_model),
                 nn.Tanh(),
                 nn.Linear(self.config.d_model, self.config.d_model),
             )
-                
-            self.input_up_proj_enc = nn.Sequential(
-                    nn.Linear(self.embedding_dim, self.config.d_model),
-                    nn.Tanh(),
-                    nn.Linear(self.config.d_model, self.config.d_model),
-                )
-
             self.output_down_proj = nn.Sequential(
                 nn.Linear(self.config.d_model, self.config.d_model),
                 nn.Tanh(),
                 nn.Linear(self.config.d_model, self.embedding_dim),
             )
         else:
-            self.input_up_proj = nn.Identity()
+            self.input_up_proj_enc = nn.Identity()
             self.output_down_proj = nn.Identity()
 
 

@@ -35,21 +35,25 @@ Add the **public key** to vast.ai:
 
 ## 3. Find and rent a GPU instance
 
-### Search for a cheap RTX 4090 or A100:
+### Search for a cheap RTX 3090 (outside China for faster image pull):
 
 ```bash
-vastai search offers 'reliability>0.95 num_gpus=1 gpu_name=RTX_4090 inet_up>200' --order dph_total
+vastai search offers 'reliability>0.95 num_gpus=1 gpu_name=RTX_3090 disk_space>=50 geolocation notin [CN,VN]' --order dph_total
 ```
 
 Pick an instance ID (e.g. `12345678`) from the output, then rent it:
 
 ```bash
 vastai create instance 12345678 \
-  --image vastai/pytorch \
+  --image pytorch/pytorch:1.13.1-cuda11.6-cudnn8-runtime \
   --disk 50 \
   --ssh \
   --direct
 ```
+
+> **Important:** Use `pytorch/pytorch:1.13.1-cuda11.6-cudnn8-runtime` exactly.
+> SeqDiffuSeq was written for PyTorch 1.11. PyTorch 2.x has breaking API changes (`torch.load`, distributed ops) that can silently break training.
+> `1.13.1` is the newest version that is fully compatible and widely cached on vast.ai hosts.
 
 ### Get the SSH connection details:
 
@@ -212,7 +216,7 @@ scp -r vastai:~/SeqDiffuSeq/ckpts/en_zh/inference_out/ \
 **Important: destroy the instance when you stop working to avoid idle charges.**
 
 ```bash
-vastai destroy instance 12345678
+echo "y" | vastai destroy instance 12345678
 ```
 
 Or from the [vast.ai web console](https://vast.ai/console/instances/).
