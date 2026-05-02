@@ -109,7 +109,7 @@ class TransformerNetModel_encoder_decoder(nn.Module):
     def build_xstart_predictor(self):
         if self.init_pretrained:
 
-            temp_bart = BartModel.from_pretrained(self.config_name, config=self.config)
+            temp_bart = BartModel.from_pretrained(self.config_name, config=self.config, ignore_mismatched_sizes=True)
             self.input_transformers = temp_bart
         else:
             self.input_transformers = BartModel(self.config, self.embedding_dim)

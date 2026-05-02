@@ -125,7 +125,6 @@ def decoding_defaults():
         classifier_path="",
         time_schedule_path='',
         comment='',
-        decoder_attention_mask=False,
     )
 
 

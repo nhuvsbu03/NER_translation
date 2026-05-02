@@ -1153,7 +1153,7 @@ class BartDecoder(BartPretrainedModel):
     BART_START_DOCSTRING,
 )
 class BartModel(BartPretrainedModel):
-    def __init__(self, config: BartConfig, embedding_dim: int):
+    def __init__(self, config: BartConfig, embedding_dim: int = 512):
         super().__init__(config)
 
         padding_idx, vocab_size = config.pad_token_id, config.vocab_size
