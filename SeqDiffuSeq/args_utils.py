@@ -66,6 +66,7 @@ def additional_args_for_translation():
         generate_by_mix=False,
         generate_by_mix_prob=0.0,
         generate_by_mix_part=1.0,
+        decoder_attention_mask=False,
     )
 
 
