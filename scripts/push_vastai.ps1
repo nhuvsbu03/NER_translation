@@ -33,7 +33,7 @@ Remote-Run "if [ -d /root/NER_translation/.git ]; then cd /root/NER_translation 
 
 # ── Tokenizer -------------------------------------------------------------
 Write-Host "==> Pushing tokenizer..."
-Remote-Run "mkdir -p /root/NER_translation/SeqDiffuSeq/data/en-zh"
+Remote-Run "sudo mkdir -p /root/NER_translation/SeqDiffuSeq/data/en-zh"
 
 foreach ($fname in @("vocab.json", "merges.txt")) {
     $localPath = Join-Path $ProjectRoot "SeqDiffuSeq\data\en-zh\$fname"
@@ -50,46 +50,46 @@ foreach ($fname in @("vocab.json", "merges.txt")) {
     }
 }
 
-# ── Checkpoint ------------------------------------------------------------
-Write-Host "==> Pushing latest checkpoint..."
-Remote-Run "mkdir -p /root/NER_translation/SeqDiffuSeq/ckpts/en-zh"
+# # ── Checkpoint ------------------------------------------------------------
+# Write-Host "==> Pushing latest checkpoint..."
+# Remote-Run "mkdir -p /root/NER_translation/SeqDiffuSeq/ckpts/en-zh"
 
-$ckptSearchDirs = @(
-    (Join-Path $ProjectRoot "SeqDiffuSeq\ckpts\en-zh"),
-    $GdriveCkptDir
-)
+# $ckptSearchDirs = @(
+#     (Join-Path $ProjectRoot "SeqDiffuSeq\ckpts\en-zh"),
+#     $GdriveCkptDir
+# )
 
-$latestCkpt = $null
-foreach ($dir in $ckptSearchDirs) {
-    if (Test-Path $dir) {
-        $found = Get-ChildItem $dir -Filter "model*.pt" -ErrorAction SilentlyContinue |
-                 Where-Object { $_.Name -notlike "*ema*" } | Sort-Object Name | Select-Object -Last 1
-        if ($found) { $latestCkpt = $found.FullName; break }
-    }
-}
-if ($latestCkpt) {
-    $ckptName = Split-Path $latestCkpt -Leaf
-    Write-Host "    $ckptName"
-    Scp-File $latestCkpt "/root/NER_translation/SeqDiffuSeq/ckpts/en-zh/$ckptName"
-} else {
-    Write-Host "    WARN: no model*.pt found -- skipping"
-}
+# $latestCkpt = $null
+# foreach ($dir in $ckptSearchDirs) {
+#     if (Test-Path $dir) {
+#         $found = Get-ChildItem $dir -Filter "model*.pt" -ErrorAction SilentlyContinue |
+#                  Where-Object { $_.Name -notlike "*ema*" } | Sort-Object Name | Select-Object -Last 1
+#         if ($found) { $latestCkpt = $found.FullName; break }
+#     }
+# }
+# if ($latestCkpt) {
+#     $ckptName = Split-Path $latestCkpt -Leaf
+#     Write-Host "    $ckptName"
+#     Scp-File $latestCkpt "/root/NER_translation/SeqDiffuSeq/ckpts/en-zh/$ckptName"
+# } else {
+#     Write-Host "    WARN: no model*.pt found -- skipping"
+# }
 
-$latestNpy = $null
-foreach ($dir in $ckptSearchDirs) {
-    if (Test-Path $dir) {
-        $found = Get-ChildItem $dir -Filter "alpha_cumprod_step_*.npy" -ErrorAction SilentlyContinue |
-                 Sort-Object Name | Select-Object -Last 1
-        if ($found) { $latestNpy = $found.FullName; break }
-    }
-}
-if ($latestNpy) {
-    $npyName = Split-Path $latestNpy -Leaf
-    Write-Host "    $npyName"
-    Scp-File $latestNpy "/root/NER_translation/SeqDiffuSeq/ckpts/en-zh/$npyName"
-} else {
-    Write-Host "    WARN: no alpha_cumprod_step_*.npy found -- skipping"
-}
+# $latestNpy = $null
+# foreach ($dir in $ckptSearchDirs) {
+#     if (Test-Path $dir) {
+#         $found = Get-ChildItem $dir -Filter "alpha_cumprod_step_*.npy" -ErrorAction SilentlyContinue |
+#                  Sort-Object Name | Select-Object -Last 1
+#         if ($found) { $latestNpy = $found.FullName; break }
+#     }
+# }
+# if ($latestNpy) {
+#     $npyName = Split-Path $latestNpy -Leaf
+#     Write-Host "    $npyName"
+#     Scp-File $latestNpy "/root/NER_translation/SeqDiffuSeq/ckpts/en-zh/$npyName"
+# } else {
+#     Write-Host "    WARN: no alpha_cumprod_step_*.npy found -- skipping"
+# }
 
 # ── Pull results ----------------------------------------------------------
 if ($Pull) {
