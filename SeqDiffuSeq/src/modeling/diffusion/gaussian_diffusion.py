@@ -292,6 +292,10 @@ class GaussianDiffusion:
     def _load_time_schedule(self, path):
 
         alphas_cumprod = np.load(path)
+        # Subsample if training schedule has more timesteps than inference steps
+        if len(alphas_cumprod) != self.num_timesteps:
+            indices = np.linspace(0, len(alphas_cumprod) - 1, self.num_timesteps, dtype=int)
+            alphas_cumprod = alphas_cumprod[indices]
         self.update_time_discretized_parameters(alphas_cumprod)
     
     def _loss_history_update(self, ts, losses, loss_masks, training_step): #v5
