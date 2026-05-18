@@ -42,9 +42,9 @@ python3 -u inference_main.py \
     --val_txt_path       ./data/en-ru/test \
     --out_dir            "$OUT_DIR" \
     --time_schedule_path "$SCHEDULE" \
-    --diffusion_steps    200 \
+    --diffusion_steps    2000 \
     --num_samples        -1 \
-    --batch_size         100 \
+    --batch_size         50 \
     --sequence_len       128 \
     --sequence_len_src   128 \
     --top_p              -1 \
