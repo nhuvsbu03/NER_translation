@@ -144,10 +144,12 @@ class TransformerNetModel_encoder_decoder(nn.Module):
 
     def build_embeddings(self):
 
-        self.lm_head = nn.Linear(self.embedding_dim, self.input_transformers.shared.weight.shape[0])
+        pretrained_vocab_size = self.input_transformers.shared.weight.shape[0]
+        out_size = self.vocab_size if self.vocab_size and self.vocab_size < pretrained_vocab_size else pretrained_vocab_size
+        self.lm_head = nn.Linear(self.embedding_dim, out_size)
 
         with th.no_grad():
-            self.lm_head.weight = self.input_transformers.shared.weight
+            self.lm_head.weight = nn.Parameter(self.input_transformers.shared.weight[:out_size])
 
     def get_logits(self, hidden_repr):
         return self.lm_head(hidden_repr)
