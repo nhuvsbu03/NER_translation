@@ -25,18 +25,30 @@ mkdir -p "$PRETRAINED"
 if [ -f "$PRETRAINED/pytorch_model.bin" ]; then
     echo "    Already cached — skipping download."
 else
+    # Use huggingface_hub.snapshot_download (works with current HF API regardless of
+    # transformers version — the old transformers 4.18.0 from_pretrained has broken URLs)
     PRETRAINED_DIR="$PRETRAINED" python3 - <<'PYEOF'
 import os
 pretrained = os.environ["PRETRAINED_DIR"]
-from transformers import BartConfig, BartTokenizerFast, BartModel
-print("    Downloading config...")
-BartConfig.from_pretrained("facebook/bart-base").save_pretrained(pretrained)
-print("    Downloading tokenizer...")
-BartTokenizerFast.from_pretrained("facebook/bart-base").save_pretrained(pretrained)
-print("    Downloading model weights (safe_serialization=False for pytorch_model.bin)...")
-BartModel.from_pretrained("facebook/bart-base").save_pretrained(
-    pretrained, safe_serialization=False
+from huggingface_hub import snapshot_download
+print("    Downloading via huggingface_hub.snapshot_download ...")
+snapshot_download(
+    repo_id="facebook/bart-base",
+    local_dir=pretrained,
+    ignore_patterns=["*.msgpack", "flax_model*", "tf_model*", "rust_model*"],
 )
+# snapshot_download saves as safetensors; SeqDiffuSeq needs pytorch_model.bin
+# Convert if needed
+import os, glob
+if not os.path.exists(os.path.join(pretrained, "pytorch_model.bin")):
+    st_files = glob.glob(os.path.join(pretrained, "model.safetensors"))
+    if st_files:
+        print("    Converting safetensors → pytorch_model.bin ...")
+        from safetensors.torch import load_file
+        import torch
+        state_dict = load_file(st_files[0])
+        torch.save(state_dict, os.path.join(pretrained, "pytorch_model.bin"))
+        print("    Conversion done.")
 print("    Saved to", pretrained)
 PYEOF
 fi
