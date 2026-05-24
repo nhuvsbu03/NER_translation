@@ -20,7 +20,7 @@ import os
 from datasets import load_dataset
 
 raw_dir = "$RAW_DIR"
-ds = load_dataset("wmt17", "zh-en", cache_dir="/root/.cache/hf")
+ds = load_dataset("wmt/wmt17", "zh-en", cache_dir="/root/.cache/hf", trust_remote_code=True)
 
 split_map = {"train": "train", "valid": "validation", "test": "test"}
 for name, hf_split in split_map.items():
