@@ -15,14 +15,15 @@ if [ -f "$PRETRAINED/pytorch_model.bin" ]; then
     echo "    Already cached — skipping download."
 else
     HF_BASE="https://huggingface.co/facebook/bart-base/resolve/main"
-    for fname in config.json tokenizer.json tokenizer_config.json vocab.json merges.txt special_tokens_map.json; do
-        if [ ! -f "$PRETRAINED/$fname" ]; then
-            wget -q -L "$HF_BASE/$fname" -O "$PRETRAINED/$fname"
-            echo "    Downloaded $fname"
-        fi
-    done
+    # Required: config + model weights
+    wget -nv -L "$HF_BASE/config.json"       -O "$PRETRAINED/config.json"
     echo "    Downloading pytorch_model.bin (~560MB)..."
-    wget -L "$HF_BASE/pytorch_model.bin" -O "$PRETRAINED/pytorch_model.bin"
+    wget -nv -L "$HF_BASE/pytorch_model.bin" -O "$PRETRAINED/pytorch_model.bin"
+    # Optional: tokenizer support files (|| true = skip if missing from HF repo)
+    for fname in tokenizer.json tokenizer_config.json vocab.json merges.txt special_tokens_map.json; do
+        wget -nv -L "$HF_BASE/$fname" -O "$PRETRAINED/$fname" || \
+            echo "    WARN: $fname not found in HF repo — skipping"
+    done
     echo "    BART weights saved to $PRETRAINED"
 fi
 
