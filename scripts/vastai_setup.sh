@@ -29,8 +29,8 @@ fi
 
 echo "==> Installing Python dependencies..."
 pip install -q \
-    bert-score blobfile datasets \
-    "huggingface-hub==0.4.0" \
+    bert-score blobfile "datasets>=2.20" \
+    "huggingface-hub>=0.20" \
     mpi4py nltk numpy pandas protobuf \
     rouge-score sacrebleu sacremoses \
     scikit-learn scipy spacy \
