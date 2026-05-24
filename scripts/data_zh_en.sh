@@ -20,22 +20,33 @@ import os
 from datasets import load_dataset
 
 raw_dir = "$RAW_DIR"
-ds = load_dataset("wmt/wmt17", "zh-en", cache_dir="/root/.cache/hf", trust_remote_code=True)
+ds = load_dataset("wmt/wmt17", "zh-en", cache_dir="/root/.cache/hf")
 
 split_map = {"train": "train", "valid": "validation", "test": "test"}
 for name, hf_split in split_map.items():
     zh_path = os.path.join(raw_dir, f"{name}.zh")
     en_path = os.path.join(raw_dir, f"{name}.en")
+
+    # Validate existing files: line counts must match
     if os.path.exists(zh_path) and os.path.exists(en_path):
-        n = sum(1 for _ in open(zh_path, encoding="utf-8"))
-        print(f"  Exists  {name}: {n:,} pairs — skipping")
-        continue
+        n_zh = sum(1 for _ in open(zh_path, encoding="utf-8"))
+        n_en = sum(1 for _ in open(en_path, encoding="utf-8"))
+        if n_zh == n_en:
+            print(f"  Exists  {name}: {n_zh:,} pairs — skipping")
+            continue
+        else:
+            print(f"  MISMATCH {name}: zh={n_zh:,} en={n_en:,} — re-downloading")
+            os.remove(zh_path)
+            os.remove(en_path)
+
     count = 0
     with open(zh_path, "w", encoding="utf-8") as f_zh, \
          open(en_path, "w", encoding="utf-8") as f_en:
         for ex in ds[hf_split]:
-            f_zh.write(ex["translation"]["zh"].strip() + "\n")
-            f_en.write(ex["translation"]["en"].strip() + "\n")
+            zh_line = ex["translation"]["zh"].replace("\n", " ").strip()
+            en_line = ex["translation"]["en"].replace("\n", " ").strip()
+            f_zh.write(zh_line + "\n")
+            f_en.write(en_line + "\n")
             count += 1
     print(f"  Wrote   {name}: {count:,} pairs")
 
@@ -59,28 +70,47 @@ for split in train valid test; do
 done
 
 # ── Step 3: Train 32k BPE tokenizer ─────────────────────────────────────────
+# Train directly via tokenizers library (bypasses tokenizer_utils.py which
+# imports transformers, which conflicts with the current huggingface_hub version)
 echo "==> Training 32k BPE tokenizer on ZH+EN train corpus..."
 TOK_VOCAB="$DATA_DIR/vocab.json"
 if [ -f "$TOK_VOCAB" ]; then
     echo "    Tokenizer already exists — skipping. Delete $TOK_VOCAB to retrain."
 else
-    cd "$REPO_DIR"
-    python3 tokenizer_utils.py train-byte-level zh-en 32000
+    python3 - <<PYEOF
+from tokenizers import ByteLevelBPETokenizer
+import os
+
+data_dir = "$DATA_DIR"
+files = [os.path.join(data_dir, "train.zh"), os.path.join(data_dir, "train.en")]
+print(f"  Training ByteLevelBPE on {[os.path.basename(f) for f in files]} ...")
+
+tok = ByteLevelBPETokenizer()
+tok.train(
+    files=files,
+    vocab_size=32000,
+    min_frequency=2,
+    special_tokens=["<s>", "<pad>", "</s>", "<unk>", "<mask>"],
+)
+tok.save_model(data_dir)
+# vocab_size=32000 + 5 special tokens = 32005 (matches --vocab_size 32005)
+vocab_path = os.path.join(data_dir, "vocab.json")
+import json
+actual_size = len(json.load(open(vocab_path)))
+print(f"  Vocab size: {actual_size} tokens")
+print(f"  Saved vocab.json + merges.txt to {data_dir}")
+PYEOF
     echo "    Tokenizer saved to $DATA_DIR"
 fi
 
 # ── Step 4: Sanity check ─────────────────────────────────────────────────────
 echo "==> Sanity check: tokenize '你好' (should be ≤ 4 tokens)..."
-cd "$REPO_DIR"
 python3 - <<PYEOF
-from tokenizer_utils import read_byte_level
-tok = read_byte_level("./data/zh-en")
+from tokenizers import ByteLevelBPETokenizer
+tok = ByteLevelBPETokenizer("$DATA_DIR/vocab.json", "$DATA_DIR/merges.txt")
 ids = tok.encode("你好").ids
 print(f"  '你好' → {len(ids)} tokens: {ids}")
-if len(ids) > 4:
-    print("  WARN: more tokens than expected — check vocab coverage")
-else:
-    print("  OK")
+print("  OK" if len(ids) <= 4 else "  WARN: more tokens than expected")
 PYEOF
 
 echo ""
