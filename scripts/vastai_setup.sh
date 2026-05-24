@@ -8,45 +8,22 @@ PROJECT_ROOT="/root/NER_translation"
 REPO_DIR="$PROJECT_ROOT/SeqDiffuSeq"
 PRETRAINED="$REPO_DIR/pretrained/bart-base"
 
-echo "==> Downloading facebook/bart-base weights (using conda transformers before downgrade)..."
+echo "==> Downloading facebook/bart-base weights via wget (no HF library dependencies)..."
 mkdir -p "$PRETRAINED"
 
 if [ -f "$PRETRAINED/pytorch_model.bin" ]; then
     echo "    Already cached — skipping download."
 else
-    PRETRAINED_DIR="$PRETRAINED" python3 - <<'PYEOF'
-import os, shutil, glob
-pretrained = os.environ["PRETRAINED_DIR"]
-
-# Use snapshot_download — returns cache path (works on all huggingface_hub versions)
-from huggingface_hub import snapshot_download
-print("    Downloading bart-base snapshot...")
-snap = snapshot_download(
-    repo_id="facebook/bart-base",
-    ignore_patterns=["*.msgpack", "flax_model*", "tf_model*", "rust_model*"],
-)
-print(f"    Snapshot at: {snap}")
-
-# Copy files to our pretrained dir
-for f in os.listdir(snap):
-    src = os.path.join(snap, f)
-    dst = os.path.join(pretrained, f)
-    if os.path.isfile(src) and not os.path.exists(dst):
-        shutil.copy2(src, dst)
-        print(f"    Copied {f}")
-
-# snapshot_download may give safetensors; SeqDiffuSeq needs pytorch_model.bin
-if not os.path.exists(os.path.join(pretrained, "pytorch_model.bin")):
-    st = glob.glob(os.path.join(pretrained, "model.safetensors"))
-    if st:
-        print("    Converting safetensors → pytorch_model.bin ...")
-        from safetensors.torch import load_file
-        import torch
-        torch.save(load_file(st[0]), os.path.join(pretrained, "pytorch_model.bin"))
-        print("    Conversion done.")
-
-print("    Saved to", pretrained)
-PYEOF
+    HF_BASE="https://huggingface.co/facebook/bart-base/resolve/main"
+    for fname in config.json tokenizer.json tokenizer_config.json vocab.json merges.txt special_tokens_map.json; do
+        if [ ! -f "$PRETRAINED/$fname" ]; then
+            wget -q -L "$HF_BASE/$fname" -O "$PRETRAINED/$fname"
+            echo "    Downloaded $fname"
+        fi
+    done
+    echo "    Downloading pytorch_model.bin (~560MB)..."
+    wget -L "$HF_BASE/pytorch_model.bin" -O "$PRETRAINED/pytorch_model.bin"
+    echo "    BART weights saved to $PRETRAINED"
 fi
 
 echo "==> Installing Python dependencies..."
