@@ -20,7 +20,7 @@ import os
 from datasets import load_dataset
 
 raw_dir = "$RAW_DIR"
-ds = load_dataset("Helsinki-NLP/opus-100", "zh-en", cache_dir="/root/.cache/hf")
+ds = load_dataset("Helsinki-NLP/opus-100", "en-zh", cache_dir="/root/.cache/hf")
 
 split_map = {"train": "train", "valid": "validation", "test": "test"}
 for name, hf_split in split_map.items():
