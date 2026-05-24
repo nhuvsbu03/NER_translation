@@ -27,6 +27,10 @@ else
     echo "    BART weights saved to $PRETRAINED"
 fi
 
+echo "==> Installing system dependencies (OpenMPI for mpi4py)..."
+apt-get install -y -q libopenmpi-dev
+echo "    Done."
+
 echo "==> Installing Python dependencies..."
 pip install -q \
     bert-score blobfile "datasets>=2.20" \
