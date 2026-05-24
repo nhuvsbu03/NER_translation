@@ -4,6 +4,7 @@
 param(
     [string]$Remote = "vastai",
     [string]$GitRepo = "https://github.com/nhuvsbu03/NER_translation.git",
+    [string]$Pair   = "en-zh",
     [switch]$Pull
 )
 
@@ -12,8 +13,8 @@ $ProjectRoot = Split-Path -Parent $ScriptDir
 
 # ── CONFIGURE THESE PATHS ─────────────────────────────────────────────────
 $GdriveRoot    = "G:\My Drive\BUyen_Qnhu++\src\SeqDiffuSeq"
-$GdriveTokDir  = "$GdriveRoot\data\en-zh"
-$GdriveCkptDir = "$GdriveRoot\ckpts\en-zh"
+$GdriveTokDir  = "$GdriveRoot\data\$Pair"
+$GdriveCkptDir = "$GdriveRoot\ckpts\$Pair"
 # -------------------------------------------------------------------------
 
 function Remote-Run($cmd) {
@@ -32,21 +33,21 @@ Write-Host "==> Cloning repo on instance..."
 Remote-Run "if [ -d /root/NER_translation/.git ]; then cd /root/NER_translation && git pull; else rm -rf /root/NER_translation && git clone $GitRepo /root/NER_translation; fi"
 
 # ── Tokenizer -------------------------------------------------------------
-Write-Host "==> Pushing tokenizer..."
-Remote-Run "sudo mkdir -p /root/NER_translation/SeqDiffuSeq/data/en-zh"
+Write-Host "==> Pushing tokenizer ($Pair)..."
+Remote-Run "sudo mkdir -p /root/NER_translation/SeqDiffuSeq/data/$Pair"
 
 foreach ($fname in @("vocab.json", "merges.txt")) {
-    $localPath = Join-Path $ProjectRoot "SeqDiffuSeq\data\en-zh\$fname"
+    $localPath = Join-Path $ProjectRoot "SeqDiffuSeq\data\$Pair\$fname"
     $drivePath = Join-Path $GdriveTokDir $fname
 
     if (Test-Path $localPath) {
         Write-Host "    $fname (local)"
-        Scp-File $localPath "/root/NER_translation/SeqDiffuSeq/data/en-zh/$fname"
+        Scp-File $localPath "/root/NER_translation/SeqDiffuSeq/data/$Pair/$fname"
     } elseif (Test-Path $drivePath) {
         Write-Host "    $fname (Google Drive)"
-        Scp-File $drivePath "/root/NER_translation/SeqDiffuSeq/data/en-zh/$fname"
+        Scp-File $drivePath "/root/NER_translation/SeqDiffuSeq/data/$Pair/$fname"
     } else {
-        Write-Host "    WARN: $fname not found -- skipping"
+        Write-Host "    WARN: $fname not found locally or on Drive -- will be created by data_zh_en.sh on instance"
     }
 }
 
@@ -96,7 +97,7 @@ if ($Pull) {
     $localResults = Join-Path $ProjectRoot "SeqDiffuSeq\results"
     New-Item -ItemType Directory -Path $localResults -Force | Out-Null
     Write-Host "==> Pulling results from $Remote..."
-    scp -r "${Remote}:/root/NER_translation/SeqDiffuSeq/ckpts/en-zh/inference_out" "$localResults"
+    scp -r "${Remote}:/root/NER_translation/SeqDiffuSeq/ckpts/$Pair/inference_out" "$localResults"
 }
 
 Write-Host "==> Done."

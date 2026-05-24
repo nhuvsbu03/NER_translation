@@ -13,8 +13,13 @@ import os
 import re
 
 
-def find_output_file(results_dir: str, pair: str) -> str:
-    pattern = os.path.join(results_dir, pair, "inference_out", "ema_*.samples_*.txt")
+def find_output_file(results_dir: str, pair: str, step: int = None) -> str:
+    if step is not None:
+        step_pad = f"{step:06d}"
+        infer_dir = os.path.join(results_dir, pair, f"inference_out_step{step_pad}")
+    else:
+        infer_dir = os.path.join(results_dir, pair, "inference_out")
+    pattern = os.path.join(infer_dir, "ema_*.samples_*.txt")
     files = [f for f in glob.glob(pattern) if "raw-output-ids" not in f]
     if not files:
         raise FileNotFoundError(
@@ -38,9 +43,12 @@ def find_source_file(results_dir: str, pair: str) -> str:
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--pair", default="en-ru", help="Language pair (e.g. en-ru, en-zh)")
+    parser.add_argument("--pair", default="en-ru", help="Language pair (e.g. en-ru, zh-en)")
     parser.add_argument("--results_dir", default="SeqDiffuSeq/results",
                         help="Local results directory (default: SeqDiffuSeq/results)")
+    parser.add_argument("--step", type=int, default=None,
+                        help="Checkpoint step to evaluate (e.g. 50000, 100000). "
+                             "Looks in inference_out_step<STEP>/ instead of inference_out/")
     args = parser.parse_args()
 
     try:
@@ -48,7 +56,7 @@ def main():
     except ImportError:
         raise SystemExit("sacrebleu not installed. Run: pip install sacrebleu")
 
-    output_file = find_output_file(args.results_dir, args.pair)
+    output_file = find_output_file(args.results_dir, args.pair, args.step)
     print(f"Output file : {output_file}")
 
     with open(output_file, "r", encoding="utf-8") as f:
@@ -78,7 +86,10 @@ def main():
     m = re.search(r"ema_[\d.]+_(\d+)", os.path.basename(output_file))
     step_tag = f"step{m.group(1)}" if m else "eval"
 
-    out_dir = os.path.join(args.results_dir, args.pair, "inference_out")
+    if args.step is not None:
+        out_dir = os.path.join(args.results_dir, args.pair, f"inference_out_step{args.step:06d}")
+    else:
+        out_dir = os.path.join(args.results_dir, args.pair, "inference_out")
     csv_path     = os.path.join(out_dir, f"{step_tag}.csv")
     summary_path = os.path.join(out_dir, f"{step_tag}_summary.txt")
 

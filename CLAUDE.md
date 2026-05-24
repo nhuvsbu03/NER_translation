@@ -4,7 +4,7 @@
 
 Train **SeqDiffuSeq** (arXiv 2212.10325), a diffusion-based seq2seq model, for machine translation.
 Long-term target: **EN→ZH NER-aware translation** (named entities preserved in `[entity:TYPE]` format).
-Current diagnostic: **EN→RU** (WMT14, ~2.5M pairs) — closer language topology to the paper's EN→DE success case.
+Current experiment: **ZH→EN** (WMT17, ~2.1M pairs, Session 04) — testing whether BART's English pretraining helps when English is the target.
 
 ## Workflow
 
@@ -13,11 +13,11 @@ Current diagnostic: **EN→RU** (WMT14, ~2.5M pairs) — closer language topolog
    └── edit code → git commit → git push
 
 2. vast.ai instance (SSH in)
-   ├── scripts/push_vastai.ps1          # git pull + push tokenizer files
-   ├── bash scripts/vastai_setup.sh     # install deps + download BART (once per instance)
-   ├── bash scripts/data_en_ru.sh       # download WMT14 EN-RU + train tokenizer (once)
-   ├── bash scripts/train_en_ru.sh      # launch training in tmux → returns immediately
-   └── bash scripts/infer_en_ru.sh      # run inference after training finishes
+   ├── scripts/push_vastai.ps1 -Pair zh-en  # git pull + push tokenizer files
+   ├── bash scripts/vastai_setup.sh          # install deps + download BART (once per instance)
+   ├── bash scripts/data_zh_en.sh            # download WMT17 ZH-EN + train tokenizer (once)
+   ├── bash scripts/train_zh_en.sh           # launch training in tmux → returns immediately
+   └── bash scripts/infer_zh_en.sh [STEP]   # run inference (optionally at specific step)
 
 3. Local (pull results + analyze)
    ├── .\scripts\pull_results.ps1       # rsync results back from vast.ai
