@@ -6,21 +6,21 @@ set -euo pipefail
 
 PROJECT_ROOT="/root/NER_translation"
 REPO_DIR="$PROJECT_ROOT/SeqDiffuSeq"
-RAW_DIR="$PROJECT_ROOT/train_dataset/wmt17_zh_en"
+RAW_DIR="$PROJECT_ROOT/train_dataset/opus100_zh_en"
 DATA_DIR="$REPO_DIR/data/zh-en"
 
 mkdir -p "$RAW_DIR" "$DATA_DIR"
 
 # ── Step 1: Download WMT17 ZH-EN ─────────────────────────────────────────────
-echo "==> Downloading WMT17 zh-en from HuggingFace datasets..."
-echo "    (train ~2.1M pairs, valid ~2k pairs — takes a few minutes)"
+echo "==> Downloading OPUS-100 zh-en from HuggingFace datasets..."
+echo "    (~1M train pairs, 2k valid, 2k test — download ~150MB, takes ~2-3 min)"
 
 python3 - <<PYEOF
 import os
 from datasets import load_dataset
 
 raw_dir = "$RAW_DIR"
-ds = load_dataset("wmt/wmt17", "zh-en", cache_dir="/root/.cache/hf")
+ds = load_dataset("Helsinki-NLP/opus-100", "zh-en", cache_dir="/root/.cache/hf")
 
 split_map = {"train": "train", "valid": "validation", "test": "test"}
 for name, hf_split in split_map.items():
