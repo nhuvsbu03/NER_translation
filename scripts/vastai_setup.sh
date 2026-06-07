@@ -38,8 +38,8 @@ pip install -q \
     mpi4py nltk numpy pandas protobuf \
     rouge-score sacrebleu sacremoses \
     scikit-learn scipy spacy \
-    tokenizers torchmetrics tqdm \
-    "transformers==4.18.0"
+    "tokenizers>=0.19" torchmetrics tqdm \
+    "transformers>=4.35,<4.45"
 echo "    Done."
 
 echo ""
