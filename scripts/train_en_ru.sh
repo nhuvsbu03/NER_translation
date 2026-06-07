@@ -45,7 +45,7 @@ python3 -u main.py \
   --lr                 1.5e-4 \
   --lr_anneal_steps    500000 \
   --warmup             10000 \
-  --save_interval      50000 \
+  --save_interval      10000 \
   --eval_interval      5000 \
   --log_interval       100 \
   --schedule_update_stride 2000 \
