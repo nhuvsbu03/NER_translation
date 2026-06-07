@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Launch SeqDiffuSeq ZH→EN training (mBART-large-cc25 backbone).
-# Auto-resumes from the latest checkpoint in ckpts/zh-en/.
+# Launch SeqDiffuSeq JA→EN training (mBART-large-cc25 backbone).
+# Auto-resumes from the latest checkpoint in ckpts/ja-en/.
 # Returns immediately — training runs in the background (vast.ai/tmux).
 #
 # On Google Colab, download mBART first with this Python cell:
@@ -8,12 +8,12 @@
 #   model = MBartForConditionalGeneration.from_pretrained('facebook/mbart-large-cc25')
 #   model.save_pretrained('SeqDiffuSeq/pretrained/mbart-large', safe_serialization=False)
 #
-# Usage (from /root/NER_translation): bash scripts/train_zh_en.sh
+# Usage (from /root/NER_translation): bash scripts/train_ja_en.sh
 set -euo pipefail
 
 PROJECT_ROOT="${PROJECT_ROOT:-/root/NER_translation}"
 REPO_DIR="$PROJECT_ROOT/SeqDiffuSeq"
-CKPT_DIR="$REPO_DIR/ckpts/zh-en"
+CKPT_DIR="$REPO_DIR/ckpts/ja-en"
 LOG_DIR="$CKPT_DIR/log"
 LOG_FILE="$LOG_DIR/train.log"
 PRETRAINED="$REPO_DIR/pretrained/mbart-large"
@@ -37,11 +37,11 @@ fi
 TRAIN_CMD="cd $REPO_DIR && CUDA_VISIBLE_DEVICES=0 DIFFUSION_BLOB_LOGDIR=$LOG_DIR TRANSFORMERS_OFFLINE=1 \
 python3 -u main.py \
   --checkpoint_path $CKPT_DIR \
-  --src zh \
+  --src ja \
   --tgt en \
-  --train_txt_path ./data/zh-en/train \
-  --val_txt_path   ./data/zh-en/valid \
-  --dataset        zh-en \
+  --train_txt_path ./data/ja-en/train \
+  --val_txt_path   ./data/ja-en/valid \
+  --dataset        ja-en \
   --config_name    $PRETRAINED \
   --diffusion_steps    2000 \
   --noise_schedule     sqrt \
