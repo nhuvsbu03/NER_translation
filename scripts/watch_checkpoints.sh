@@ -32,7 +32,7 @@ while true; do
     LATEST=$(ls "$CKPT_DIR"/ema_0.9999_*.pt 2>/dev/null | sort | tail -1 || true)
 
     if [ -n "$LATEST" ] && [ "$LATEST" != "$SEEN" ]; then
-        STEP=$(basename "$LATEST" | grep -o '[0-9]*' | head -1 | sed 's/^0*//')
+        STEP=$(basename "$LATEST" | sed 's/ema_0\.[0-9]*_\([0-9]*\)\.pt/\1/' | sed 's/^0*//')
         OUT_FILE="$SAMPLE_DIR/step_$(printf '%06d' "$STEP").txt"
 
         # Find matching alpha_cumprod schedule
