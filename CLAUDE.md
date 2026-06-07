@@ -104,11 +104,21 @@ NER_translation/
   5. 4 bugs fixed in `transformer_model.py` (see below)
 - **Status**: Training not completed / results pending
 
-### Session 03 — EN→RU Diagnostic (CURRENT)
+### Session 03 — EN→RU Diagnostic
 - **Goal**: Validate SeqDiffuSeq works on a language closer to the paper's EN→DE
 - **Dataset**: WMT14 EN-RU (~2.5M pairs, newstest2014 = 3,003 test pairs)
-- **Target**: SacreBLEU (13a) > 15 on newstest2014
-- **See**: `plans/session_03_en_ru.md`
+- **Result**: Architecture works — real Russian output confirmed at 100k steps
+
+### Session 04 — ZH→EN (FAILED)
+- **Result**: Collapsed, BLEU 0.01 — `"the the the..."`
+- **Root cause**: BART encoder is English-pretrained; cannot represent Chinese source
+- **Key insight**: BART only works when **source is English**
+
+### Session 05 — EN→RU Production + CJK Diagnostic (CURRENT)
+- **Plan 5_1**: EN→RU on A100 SXM4 40GB, batch=128, 500k steps (~$45 est.)
+  - Instance: 39898796, launched 2026-06-07, loss healthy at step ~100
+- **Plan 5_2**: 25k-step diagnostic for EN→ZH + EN→JA (scripts not yet created)
+- **See**: `plans/session_05_en_ru_ja_kr.md`
 
 ## Known Bugs Already Fixed (DO NOT REINVESTIGATE)
 
@@ -123,8 +133,29 @@ All 4 bugs are in `SeqDiffuSeq/src/modeling/predictor/transformer_model.py`, in 
 
 ## Infrastructure
 
-- **GPU**: vast.ai RTX 3090 (~$0.14/hr) or RTX 4090 (~$0.32/hr)
+- **GPU**: vast.ai A100 SXM4 40GB (~$1.07/hr) for production; RTX 3090 (~$0.17/hr) for cheap tests
 - **SSH alias**: `vastai` (configured by `start_vastai.sh`)
 - **Repo on instance**: `/root/NER_translation/` (git clone)
 - **Data on instance**: `/root/NER_translation/SeqDiffuSeq/data/` (created by data scripts)
 - **Checkpoints**: `/root/NER_translation/SeqDiffuSeq/ckpts/` (NOT in git)
+
+## A100 Datacenter Setup — Known Issues (DO NOT REINVESTIGATE)
+
+Datacenter A100 nodes differ from consumer RTX 3090/4090 in three ways.
+All fixes are already baked into `scripts/vastai_setup.sh`.
+
+| Error | Root cause | Fix (already in vastai_setup.sh) |
+|-------|-----------|----------------------------------|
+| `ImportError: libucc.so.1: undefined symbol` on `import torch` | HPC-X `/opt/hpcx/ucc/` conflicts with PyTorch bundled libs | `pip install --upgrade torch` |
+| `MPI_Init_thread on a NULL communicator` at training start | `mpi4py` pip wheel links against system OpenMPI; datacenter uses HPC-X MPI at `/usr/local/mpi/` | Rebuild from source: `MPICC=/usr/local/mpi/bin/mpicc pip install --no-binary mpi4py mpi4py` |
+| `tokenizers` build fails (no Rust compiler) | Old `transformers==4.18.0` pinned `tokenizers<0.13` which has no Python 3.12 wheel; A100 instances run Python 3.12 (vs Python 3.10 on RTX) | Updated to `transformers>=4.35,<4.45` + `tokenizers>=0.19` |
+
+## A100 Training Config Constraints (DO NOT CHANGE WITHOUT TESTING)
+
+| Setting | Value | Reason |
+|---------|-------|--------|
+| `--batch_size` | **128** | batch=256 OOMs on A100 40GB (backward pass needs ~37GB) |
+| `--use_fp16` | **omit / False** | `TransformerNetModel_encoder_decoder.convert_to_fp16()` not implemented |
+| TF32 speedup | **automatic** | PyTorch enables TF32 on Ampere by default → ~4× faster than RTX 3090 FP32, no flags needed |
+| `--lr` | **1.5e-4** | sqrt(128/64) × 1e-4 scaling for batch=128 |
+| `--lr_anneal_steps` | **500000** | 500k × 128 = 64M samples = paper's 1M × 64 |

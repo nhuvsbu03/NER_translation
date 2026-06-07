@@ -2,7 +2,7 @@
 # Usage (PowerShell): .\scripts\start_vastai.ps1
 # Requires vastai CLI: pip install vastai
 
-$INSTANCE_ID = "36926370"
+$INSTANCE_ID = "39898796"
 $SSH_ALIAS   = "vastai"
 $SSH_KEY     = "$env:USERPROFILE\.ssh\id_ed25519"
 $SSH_CONFIG  = "$env:USERPROFILE\.ssh\config"
