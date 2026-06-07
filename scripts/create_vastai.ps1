@@ -7,9 +7,9 @@ $VOLUME_GB   = 50
 $MOUNT_PATH  = "/workspace"
 $VOLUME_LABEL = "seqdiffuseq-ckpts"
 
-Write-Host "==> Searching for cheapest RTX 3090/4090 offer..."
+Write-Host "==> Searching for cheapest A100 40GB offer..."
 $offersJson = vastai search offers `
-  "gpu_name in [RTX_3090,RTX_4090] num_gpus=1 cuda_max_good>=11.8 disk_space>=$DISK_GB inet_up>=100 verified=true rentable=true" `
+  "gpu_name in [A100_PCIE_40GB,A100_SXM4_40GB] num_gpus=1 cuda_max_good>=11.8 disk_space>=$DISK_GB inet_up>=100 verified=true rentable=true" `
   --order 'dph_total' --raw 2>$null
 $offers = $offersJson | ConvertFrom-Json
 if (-not $offers -or $offers.Count -eq 0) {

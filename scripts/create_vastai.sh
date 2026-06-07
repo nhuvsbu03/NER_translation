@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Create a new vast.ai instance with a persistent volume.
-# Searches for cheapest RTX 3090/4090 with >=24 GB VRAM, creates a 50 GB
-# volume at /workspace for checkpoints, then prints the instance ID to put
+# Searches for cheapest A100 40GB (PCIE or SXM4) for Plan 5_1 EN→RU training.
+# Creates an 80 GB disk, then prints the instance ID to put
 # into start_vastai.sh.
 #
 # Usage: ./scripts/create_vastai.sh
@@ -10,9 +10,9 @@ set -euo pipefail
 IMAGE="pytorch/pytorch:2.1.0-cuda11.8-cudnn8-devel"
 DISK_GB=80          # instance disk (code + data + checkpoints)
 
-echo "==> Searching for cheapest RTX 3090/4090 offer…"
+echo "==> Searching for cheapest A100 40GB offer…"
 OFFER_ID=$(vastai search offers \
-  "gpu_name in [RTX_3090,RTX_4090] num_gpus=1 cuda_max_good>=11.8 disk_space>=$DISK_GB inet_up>=100 verified=true rentable=true" \
+  "gpu_name in [A100_PCIE_40GB,A100_SXM4_40GB] num_gpus=1 cuda_max_good>=11.8 disk_space>=$DISK_GB inet_up>=100 verified=true rentable=true" \
   --order 'dph_total' \
   --raw 2>/dev/null \
   | python3 -c "import sys,json; offers=json.load(sys.stdin); print(offers[0]['id']) if offers else exit(1)")
