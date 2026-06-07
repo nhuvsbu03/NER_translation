@@ -31,6 +31,10 @@ echo "==> Installing system dependencies (OpenMPI for mpi4py)..."
 apt-get install -y -q libopenmpi-dev
 echo "    Done."
 
+echo "==> Upgrading PyTorch (fixes libucc symbol conflict on datacenter A100s)..."
+pip install -q --upgrade torch
+echo "    Done."
+
 echo "==> Installing Python dependencies..."
 pip install -q \
     bert-score blobfile "datasets>=2.20" \
