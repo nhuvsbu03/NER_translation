@@ -46,7 +46,6 @@ python3 -u main.py \
   --lr_anneal_steps    250000 \
   --warmup             5000 \
   --save_interval      25000 \
-  --use_fp16           True \
   --eval_interval      5000 \
   --log_interval       100 \
   --schedule_update_stride 2000 \
