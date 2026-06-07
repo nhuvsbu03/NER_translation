@@ -67,12 +67,17 @@ python3 -u main.py \
   --resume_checkpoint  '$RESUME_CKPT' \
   2>&1 | tee $LOG_FILE"
 
-# ── Launch in tmux ────────────────────────────────────────────────────────────
+# ── Launch training in tmux ──────────────────────────────────────────────────
 tmux kill-session -t train 2>/dev/null || true
 tmux new-session -d -s train "bash -c \"$TRAIN_CMD\""
 
-echo "==> Training launched in tmux session 'train'."
+# ── Launch checkpoint watcher in second tmux window ──────────────────────────
+WATCH_CMD="cd $PROJECT_ROOT && bash scripts/watch_checkpoints.sh en-ru"
+tmux new-window -t train -n watch "bash -c \"$WATCH_CMD\""
+
+echo "==> Training launched in tmux session 'train' (window: train)."
+echo "==> Checkpoint watcher launched (window: watch) — 10-sentence sample every 50k steps."
 echo ""
-echo "    Monitor:   tmux attach -t train   (detach: Ctrl+B then D)"
-echo "    Log tail:  tail -f $LOG_FILE"
-echo "    Check loss: grep 'loss:' $LOG_FILE | tail -20"
+echo "    Attach training: tmux attach -t train   (switch windows: Ctrl+B then n)"
+echo "    Log tail:        tail -f $LOG_FILE"
+echo "    View samples:    ls $CKPT_DIR/samples/"
