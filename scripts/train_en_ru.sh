@@ -41,11 +41,11 @@ python3 -u main.py \
   --noise_schedule     sqrt \
   --sequence_len       128 \
   --sequence_len_src   128 \
-  --batch_size         256 \
-  --lr                 2e-4 \
-  --lr_anneal_steps    250000 \
-  --warmup             5000 \
-  --save_interval      25000 \
+  --batch_size         128 \
+  --lr                 1.5e-4 \
+  --lr_anneal_steps    500000 \
+  --warmup             10000 \
+  --save_interval      50000 \
   --eval_interval      5000 \
   --log_interval       100 \
   --schedule_update_stride 2000 \
