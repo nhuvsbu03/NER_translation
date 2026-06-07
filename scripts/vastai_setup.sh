@@ -39,11 +39,19 @@ echo "==> Installing Python dependencies..."
 pip install -q \
     bert-score blobfile "datasets>=2.20" \
     "huggingface-hub>=0.20" \
-    mpi4py nltk numpy pandas protobuf \
+    nltk numpy pandas protobuf \
     rouge-score sacrebleu sacremoses \
     scikit-learn scipy spacy \
     "tokenizers>=0.19" torchmetrics tqdm \
     "transformers>=4.35,<4.45"
+echo "    Done."
+
+echo "==> Building mpi4py against HPC-X MPI (fixes MPI_Init_thread on datacenter A100s)..."
+# Datacenter nodes ship HPC-X MPI at /usr/local/mpi; pip wheel links against wrong lib.
+# Rebuild from source using the correct mpicc so MPI.COMM_WORLD works without mpirun.
+MPICC_BIN=$(which mpicc 2>/dev/null || echo /usr/local/mpi/bin/mpicc)
+pip uninstall mpi4py -y -q 2>/dev/null || true
+MPICC="$MPICC_BIN" pip install -q --no-binary mpi4py mpi4py
 echo "    Done."
 
 echo ""
