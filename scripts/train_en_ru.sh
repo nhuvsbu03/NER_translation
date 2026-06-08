@@ -45,7 +45,7 @@ python3 -u main.py \
   --lr                 1.5e-4 \
   --lr_anneal_steps    500000 \
   --warmup             10000 \
-  --save_interval      10000 \
+  --save_interval      50000 \
   --eval_interval      5000 \
   --log_interval       100 \
   --schedule_update_stride 2000 \
@@ -75,9 +75,17 @@ tmux new-session -d -s train "bash -c \"$TRAIN_CMD\""
 WATCH_CMD="cd $PROJECT_ROOT && bash scripts/watch_checkpoints.sh en-ru"
 tmux new-window -t train -n watch "bash -c \"$WATCH_CMD\""
 
+# ── Launch crash monitor in separate tmux session ────────────────────────────
+MON_CMD="cd $PROJECT_ROOT && bash scripts/monitor_training.sh en-ru"
+tmux kill-session -t monitor 2>/dev/null || true
+tmux new-session -d -s monitor "bash -c \"$MON_CMD\""
+
 echo "==> Training launched in tmux session 'train' (window: train)."
 echo "==> Checkpoint watcher launched (window: watch) — 10-sentence sample every 50k steps."
+echo "==> Crash monitor launched in tmux session 'monitor'."
 echo ""
 echo "    Attach training: tmux attach -t train   (switch windows: Ctrl+B then n)"
+echo "    Attach monitor:  tmux attach -t monitor"
+echo "    Monitor log:     tail -f $CKPT_DIR/log/monitor.log"
 echo "    Log tail:        tail -f $LOG_FILE"
 echo "    View samples:    ls $CKPT_DIR/samples/"
