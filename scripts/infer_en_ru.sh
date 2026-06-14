@@ -40,6 +40,8 @@ CUDA_VISIBLE_DEVICES=0 TRANSFORMERS_OFFLINE=1 \
 python3 -u inference_main.py \
     --model_name_or_path "$EMA_CKPT" \
     --val_txt_path       ./data/en-ru/test \
+    --src                en \
+    --tgt                ru \
     --out_dir            "$OUT_DIR" \
     --time_schedule_path "$SCHEDULE" \
     --diffusion_steps    2000 \

@@ -369,6 +369,12 @@ class Trainer:
         for rate, params in zip(self.ema_rate, self.ema_params):
             save_checkpoint(rate, params)
 
+        if dist.get_rank() == 0:
+            opt_filename = f"opt{(self.step+self.resume_step):06d}.pt"
+            print('writing optimizer to', bf.join(self.checkpoint_path, opt_filename))
+            with bf.BlobFile(bf.join(self.checkpoint_path, opt_filename), "wb") as f:
+                torch.save(self.opt.state_dict(), f)
+
         dist.barrier()
 
     def _master_params_to_state_dict(self, master_params):

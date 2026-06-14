@@ -420,6 +420,14 @@ class GaussianDiffusion:
         t0_loss = mean_flat((x_start_mean - model_out_x_start) ** 2, loss_mask)
         terms["mse"] = th.where(t0_mask, t0_loss, terms["mse"])
 
+        # Rounding loss on model prediction: penalize when predicted x0 decodes to wrong tokens.
+        # Without this, MSE alone has a degenerate minimum at near-zero embeddings (zero-attractor),
+        # which maps to EOS/PAD tokens and produces empty output strings.
+        model_out_discrete_nll = self.token_discrete_loss(
+            model_out_x_start, get_logits, input_ids, mask=loss_mask
+        )
+        terms["model_rounding_nll"] = model_out_discrete_nll
+
         ### adaptive noise schedule logging part
         with th.no_grad():
             mse_loss_log_ = th.mean((target - model_output) ** 2, dim = -1).detach()
@@ -436,7 +444,7 @@ class GaussianDiffusion:
         
         decoder_nll = self.token_discrete_loss(x_start, get_logits, input_ids, mask=loss_mask)
 
-        terms["loss"] = terms["mse"] + (decoder_nll + tT_loss)
+        terms["loss"] = terms["mse"] + (decoder_nll + tT_loss) + model_out_discrete_nll
 
         return terms
 
