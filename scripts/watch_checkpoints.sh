@@ -93,7 +93,7 @@ while true; do
                 2>&1 | tee "$BLEU_INFER"
 
             # Parse [hyp, ref] pairs and compute BLEU
-            DECODED200=$(ls "$CKPT_DIR"/ema_0.9999_$(printf '%06d' "$STEP").pt.samples_200.steps-2000.*.clamp-no_clamp-normal_42.txt 2>/dev/null | sort | tail -1 || true)
+            DECODED200=$(ls "$CKPT_DIR"/ema_0.9999_$(printf '%06d' "$STEP").pt.samples_200.steps-2000*clamp-no_clamp-normal_42.txt 2>/dev/null | sort | tail -1 || true)
 
             if [ -n "$DECODED200" ]; then
                 python3 -c "
