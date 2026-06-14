@@ -28,7 +28,7 @@ else
 fi
 
 # ── Build training command ────────────────────────────────────────────────────
-TRAIN_CMD="cd $REPO_DIR && CUDA_VISIBLE_DEVICES=0 DIFFUSION_BLOB_LOGDIR=$LOG_DIR TRANSFORMERS_OFFLINE=1 \
+TRAIN_CMD="source /opt/miniforge3/etc/profile.d/conda.sh && conda activate main && cd $REPO_DIR && CUDA_VISIBLE_DEVICES=0 DIFFUSION_BLOB_LOGDIR=$LOG_DIR TRANSFORMERS_OFFLINE=1 \
 python3 -u main.py \
   --checkpoint_path $CKPT_DIR \
   --src en \
