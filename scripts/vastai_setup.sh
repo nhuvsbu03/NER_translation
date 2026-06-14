@@ -31,8 +31,16 @@ echo "==> Installing system dependencies (OpenMPI for mpi4py)..."
 apt-get install -y -q libopenmpi-dev
 echo "    Done."
 
-echo "==> Upgrading PyTorch (fixes libucc symbol conflict on datacenter A100s)..."
-pip install -q --upgrade torch
+echo "==> Checking PyTorch CUDA compatibility..."
+CUDA_OK=$(python3 -c "import torch; print('ok' if torch.cuda.is_available() else 'no_cuda')" 2>/dev/null || echo "import_fail")
+if [ "$CUDA_OK" != "ok" ]; then
+    echo "    torch.cuda.is_available()=False — installing torch matched to host CUDA driver..."
+    CUDA_VER=$(python3 -c "import subprocess,re; o=subprocess.check_output(['nvidia-smi'],text=True); m=re.search(r'CUDA Version: (\d+)\.(\d+)',o); print(f'cu{m.group(1)}{m.group(2).zfill(1)}') if m else print('cu124')" 2>/dev/null || echo "cu124")
+    echo "    Detected CUDA: $CUDA_VER"
+    pip install -q torch --index-url "https://download.pytorch.org/whl/$CUDA_VER"
+else
+    echo "    torch.cuda.is_available()=True — skipping torch reinstall."
+fi
 echo "    Done."
 
 echo "==> Installing Python dependencies..."
