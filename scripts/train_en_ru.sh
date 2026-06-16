@@ -43,7 +43,7 @@ python3 -u main.py \
   --sequence_len_src   128 \
   --batch_size         32 \
   --lr                 3.75e-5 \
-  --lr_anneal_steps    500000 \
+  --lr_anneal_steps    1000000 \
   --warmup             10000 \
   --save_interval      50000 \
   --eval_interval      5000 \
