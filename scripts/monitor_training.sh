@@ -67,7 +67,7 @@ while true; do
 
     # ── Collapse detection: grad_norm early stopping ───────────────────────────
     if [ -f "$LOG_DIR/train.log" ]; then
-        CURRENT_STEP=$(grep "| step " "$LOG_DIR/train.log" 2>/dev/null | tail -1 | awk '{print $4}' || echo 0)
+        CURRENT_STEP=$(grep "^| step " "$LOG_DIR/train.log" 2>/dev/null | tail -1 | awk '{printf "%.0f\n", $4}' || echo 0)
         if [ "${CURRENT_STEP:-0}" -ge 20000 ] && [ ! -f "$LOG_DIR/COLLAPSE_FLAG" ]; then
             LOW_COUNT=$(grep "| grad_norm |" "$LOG_DIR/train.log" 2>/dev/null | tail -10 \
                 | awk '{v=$3+0; if(v < 0.005) c++} END {print c+0}')

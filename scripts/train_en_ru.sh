@@ -53,15 +53,15 @@ python3 -u main.py \
   --schedule_sampler   uniform \
   --encoder_layers     6 \
   --decoder_layers     6 \
-  --num_heads          12 \
-  --in_channel         768 \
-  --out_channel        768 \
-  --num_channels       3072 \
+  --num_heads          8 \
+  --in_channel         128 \
+  --out_channel        128 \
+  --num_channels       512 \
   --vocab_size         32005 \
   --dropout            0.3 \
   --predict_xstart     True \
   --seed               42 \
-  --init_pretrained    True \
+  --init_pretrained    False \
   --freeze_embeddings  False \
   --use_pretrained_embeddings False \
   --resume_checkpoint  '$RESUME_CKPT' \
