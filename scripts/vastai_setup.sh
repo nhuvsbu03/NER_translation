@@ -44,7 +44,10 @@ fi
 echo "    Done."
 
 echo "==> Installing Python dependencies..."
-pip install -q \
+# Use venv pip if present (vast.ai pytorch images have /venv/main); fall back to system pip.
+PIP=$([ -x /venv/main/bin/pip ] && echo /venv/main/bin/pip || echo pip)
+echo "    Using pip: $PIP"
+$PIP install -q \
     bert-score blobfile "datasets>=2.20" \
     "huggingface-hub>=0.20" \
     nltk numpy pandas protobuf \
@@ -58,8 +61,8 @@ echo "==> Building mpi4py against HPC-X MPI (fixes MPI_Init_thread on datacenter
 # Datacenter nodes ship HPC-X MPI at /usr/local/mpi; pip wheel links against wrong lib.
 # Rebuild from source using the correct mpicc so MPI.COMM_WORLD works without mpirun.
 MPICC_BIN=$(which mpicc 2>/dev/null || echo /usr/local/mpi/bin/mpicc)
-pip uninstall mpi4py -y -q 2>/dev/null || true
-MPICC="$MPICC_BIN" pip install -q --no-binary mpi4py mpi4py
+$PIP uninstall mpi4py -y -q 2>/dev/null || true
+MPICC="$MPICC_BIN" $PIP install -q --no-binary mpi4py mpi4py
 echo "    Done."
 
 echo ""
