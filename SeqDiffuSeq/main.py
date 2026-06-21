@@ -8,6 +8,7 @@ import pprint
 import sys
 from transformers import set_seed
 import os
+import torch
 
 from src.utils import dist_util, logger
 from src.modeling.diffusion.resample import create_named_schedule_sampler
@@ -19,6 +20,9 @@ from tokenizer_utils import create_tokenizer
 
 
 def main():
+    # Enable TF32 for matmul — safe for training, ~2× faster on Ampere/Blackwell/Hopper
+    torch.backends.cuda.matmul.allow_tf32 = True
+
     args = create_argparser().parse_args()
     dist_util.setup_dist()
     logger.configure(dir=os.path.join(args.checkpoint_path, 'logger/'))
