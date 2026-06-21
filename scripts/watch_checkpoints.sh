@@ -50,7 +50,7 @@ while true; do
             echo "[$(date '+%H:%M:%S')] New checkpoint: step $STEP — running 10-sentence sample..."
 
             cd "$REPO_DIR"
-            CUDA_VISIBLE_DEVICES=0 TRANSFORMERS_OFFLINE=1 \
+            CUDA_VISIBLE_DEVICES=0 TRANSFORMERS_OFFLINE=1 DATALOADER_NUM_WORKERS=0 \
             python3 -u inference_main.py \
                 --model_name_or_path "$LATEST" \
                 --val_txt_path       "$DATA_DIR/test" \
@@ -79,7 +79,7 @@ while true; do
             BLEU_INFER="$SAMPLE_DIR/bleu_infer_step_$(printf '%06d' "$STEP").txt"
             echo "[$(date '+%H:%M:%S')] Running 200-sentence BLEU eval (2000 DDIM steps)..."
 
-            CUDA_VISIBLE_DEVICES=0 TRANSFORMERS_OFFLINE=1 \
+            CUDA_VISIBLE_DEVICES=0 TRANSFORMERS_OFFLINE=1 DATALOADER_NUM_WORKERS=0 \
             python3 -u inference_main.py \
                 --model_name_or_path "$LATEST" \
                 --val_txt_path       "$DATA_DIR/test" \
