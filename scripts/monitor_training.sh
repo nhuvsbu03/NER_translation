@@ -9,6 +9,7 @@
 #   tmux new-session -d -s monitor "bash /root/NER_translation/scripts/monitor_training.sh en-ru"
 
 PAIR="${1:-en-ru}"
+EXP="${2:-}"   # A or B when monitoring an experiment run (used for crash-restart)
 PROJECT_ROOT="/root/NER_translation"
 REPO_DIR="$PROJECT_ROOT/SeqDiffuSeq"
 CKPT_DIR="$REPO_DIR/ckpts/$PAIR"
@@ -91,7 +92,11 @@ while true; do
             else
                 log "Training process dead — auto-restarting..."
                 cd "$PROJECT_ROOT"
-                bash scripts/train_en_ru.sh >> "$MONITOR_LOG" 2>&1 || true
+                if [ -n "$EXP" ]; then
+                    bash scripts/train_en_ru_exp.sh "$EXP" >> "$MONITOR_LOG" 2>&1 || true
+                else
+                    bash scripts/train_en_ru.sh >> "$MONITOR_LOG" 2>&1 || true
+                fi
                 LAST_RESTART=$(date +%s)
                 log "Restart issued."
             fi

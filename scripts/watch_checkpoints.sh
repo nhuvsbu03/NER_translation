@@ -11,7 +11,11 @@
 # Arg 1: language pair (default: en-ru)
 set -euo pipefail
 
+# Activate the image's torch venv (vast pytorch image: /venv/main)
+source /venv/main/bin/activate 2>/dev/null || true
+
 PAIR="${1:-en-ru}"
+SEQ_LEN="${2:-128}"   # target sequence_len (Run A paper=64, Run B/S08=128)
 PROJECT_ROOT="/root/NER_translation"
 REPO_DIR="$PROJECT_ROOT/SeqDiffuSeq"
 CKPT_DIR="$REPO_DIR/ckpts/$PAIR"
@@ -53,7 +57,7 @@ while true; do
                 --diffusion_steps    2000 \
                 --num_samples        10 \
                 --batch_size         10 \
-                --sequence_len       128 \
+                --sequence_len       $SEQ_LEN \
                 --sequence_len_src   128 \
                 --top_p              -1 \
                 --clamp              no_clamp \
@@ -82,7 +86,7 @@ while true; do
                 --diffusion_steps    2000 \
                 --num_samples        200 \
                 --batch_size         10 \
-                --sequence_len       128 \
+                --sequence_len       $SEQ_LEN \
                 --sequence_len_src   128 \
                 --top_p              -1 \
                 --clamp              no_clamp \
