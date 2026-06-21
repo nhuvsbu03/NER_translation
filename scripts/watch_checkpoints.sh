@@ -20,7 +20,9 @@ PROJECT_ROOT="/root/NER_translation"
 REPO_DIR="$PROJECT_ROOT/SeqDiffuSeq"
 CKPT_DIR="$REPO_DIR/ckpts/$PAIR"
 SAMPLE_DIR="$CKPT_DIR/samples"
-DATA_DIR="$REPO_DIR/data/$PAIR"
+# Strip trailing experiment suffix (en-ru-A → en-ru, en-ru → en-ru)
+LANG_PAIR=$(echo "$PAIR" | sed 's/-[A-Z]$//')
+DATA_DIR="$REPO_DIR/data/$LANG_PAIR"
 
 mkdir -p "$SAMPLE_DIR"
 
