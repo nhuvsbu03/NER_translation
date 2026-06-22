@@ -21,7 +21,7 @@ def get_dataloader(tokenizer, data_path, batch_size, max_seq_len, max_seq_len_sr
         batch_size=batch_size,  # 20,
         drop_last=True,
         shuffle='train' in data_path,
-        num_workers=int(os.environ.get('DATALOADER_NUM_WORKERS', 4)),
+        num_workers=int(os.environ.get('DATALOADER_NUM_WORKERS', 2)),
         collate_fn=partial(TextDataset_translation.collate_pad, 
                            args=args,
                            cutoff=max_seq_len, 
