@@ -4,6 +4,7 @@
 # Usage: bash scripts/data_en_ru.sh
 set -euo pipefail
 
+PYTHON=$([ -x /venv/main/bin/$PYTHON] && echo /venv/main/bin/$PYTHON|| echo python3)
 PROJECT_ROOT="/root/NER_translation"
 REPO_DIR="$PROJECT_ROOT/SeqDiffuSeq"
 RAW_DIR="$PROJECT_ROOT/train_dataset/wmt14_en_ru"
@@ -15,7 +16,7 @@ mkdir -p "$RAW_DIR" "$DATA_DIR"
 echo "==> Downloading WMT14 ru-en from HuggingFace datasets..."
 echo "    (train ~2.5M pairs, valid/test ~3,003 pairs each — takes a few minutes)"
 
-python3 - <<PYEOF
+python3- <<PYEOF
 import os
 from datasets import load_dataset
 
@@ -66,14 +67,14 @@ if [ -f "$TOK_VOCAB" ]; then
 else
     # tokenizer_utils.py looks for files with 'train' in ./data/en-ru/ from cwd=REPO_DIR
     cd "$REPO_DIR"
-    python3 tokenizer_utils.py train-byte-level en-ru 32000
+    python3tokenizer_utils.py train-byte-level en-ru 32000
     echo "    Tokenizer saved to $DATA_DIR"
 fi
 
 # ── Step 4: Sanity check ─────────────────────────────────────────────────────
 echo "==> Sanity check: tokenize 'Москва' (should be ≤ 3 tokens)..."
 cd "$REPO_DIR"
-python3 - <<PYEOF
+python3- <<PYEOF
 from tokenizer_utils import read_byte_level
 tok = read_byte_level("./data/en-ru")
 ids = tok.encode("Москва").ids
