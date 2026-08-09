@@ -1,47 +1,62 @@
 """Zero-shot translation with DiffusionGemma. Writes hypotheses + SacreBLEU report."""
-import argparse, os, sacrebleu, torch
+import argparse, gc, os, sacrebleu, torch
 from pathlib import Path
 from tqdm import tqdm
-from transformers import AutoProcessor, AutoModelForMultimodalLM, BitsAndBytesConfig
+from transformers import AutoProcessor, AutoModelForMultimodalLM
 
 
 def load_model(model_id, hf_token):
-    bnb = BitsAndBytesConfig(
-        load_in_4bit=True,
-        bnb_4bit_compute_dtype=torch.bfloat16,
-        bnb_4bit_use_double_quant=True,
-        bnb_4bit_quant_type="nf4",
-        llm_int8_enable_fp32_cpu_offload=True,  # allow overflow layers on CPU
-    )
     processor = AutoProcessor.from_pretrained(model_id, token=hf_token)
-    # max_memory lets accelerate offload the ~3GB overflow to CPU RAM;
-    # the NF4 model is ~13GB so GPU gets nearly everything after loading.
+
+    # DiffusionGemma 26B has MoE expert weights stored as batched nn.Parameter tensors
+    # (shape [128, 1408, 2816]) which bitsandbytes cannot quantize directly.
+    # Total BF16 footprint is ~47 GB; the A6000 has 47.4 GB, leaving no room for activations.
+    # Strategy: use device_map="auto" with a 40 GB GPU budget so ~7 GB overflows to CPU.
+    # Inference is slightly slower due to CPU↔GPU transfers on those layers, but it works.
+    print(f"Loading {model_id} in BF16 with device_map=auto (40 GB GPU cap)…")
+    gc.collect()
+    torch.cuda.empty_cache()
     model = AutoModelForMultimodalLM.from_pretrained(
         model_id,
-        quantization_config=bnb,
+        torch_dtype=torch.bfloat16,
         device_map="auto",
-        max_memory={0: "20GiB", "cpu": "64GiB"},
+        max_memory={0: "40GiB", "cpu": "400GiB"},
         token=hf_token,
     )
+    model.eval()
+    print(f"GPU memory after loading: {torch.cuda.memory_allocated(0)/1e9:.1f} GB")
     return model, processor
 
 
-def translate_one(model, processor, text, src_lang, tgt_lang, max_new_tokens=200):
-    msgs = [{"role": "user", "content": [
-        {"type": "text", "text": f"Translate the following {src_lang} text to {tgt_lang}:\n{text}"}
-    ]}]
+def _infer_device(model):
+    """Return the first real CUDA device used by the model (fallback: cuda:0)."""
+    return next(
+        (p.device for p in model.parameters() if p.device.type == "cuda"),
+        torch.device("cuda:0"),
+    )
+
+
+def translate_one(model, processor, text, src_lang, tgt_lang, max_new_tokens=150):
+    prompt = (
+        f"Translate the following {src_lang} sentence to {tgt_lang}. "
+        f"Output only the {tgt_lang} translation, nothing else.\n{text}"
+    )
+    msgs = [{"role": "user", "content": [{"type": "text", "text": prompt}]}]
     inputs = processor.apply_chat_template(
-        msgs,
-        add_generation_prompt=True,
-        tokenize=True,
-        return_dict=True,
-        return_tensors="pt",
-    ).to("cuda:0")  # device_map dispatch: always send inputs to first GPU
+        msgs, add_generation_prompt=True, tokenize=True,
+        return_dict=True, return_tensors="pt",
+    ).to(_infer_device(model))
     with torch.no_grad():
+        # generate() returns DiffusionGemmaGenerationOutput; take .sequences
         out = model.generate(**inputs, max_new_tokens=max_new_tokens)
-    return processor.decode(
-        out[0][inputs["input_ids"].shape[-1]:], skip_special_tokens=True
-    ).strip()
+
+    full = processor.decode(out.sequences[0], skip_special_tokens=True)
+    # Strip the echoed prompt section ("model\nthought\n" or "model\n")
+    for marker in ("model\nthought\n", "model\n"):
+        if marker in full:
+            full = full.split(marker, 1)[1]
+            break
+    return full.strip()
 
 
 def main():
@@ -53,25 +68,27 @@ def main():
     ap.add_argument("--tgt_lang",  default="Russian")
     ap.add_argument("--model_id",  default="google/diffusiongemma-26B-A4B-it")
     ap.add_argument("--max_lines", type=int, default=None,
-                    help="Limit lines for smoke test (e.g. --max_lines 20)")
+                    help="Limit lines for smoke test (e.g. --max_lines 5)")
+    ap.add_argument("--max_new_tokens", type=int, default=150,
+                    help="Max output tokens per sentence (reduce to lower peak VRAM)")
     args = ap.parse_args()
 
     hf_token = os.environ.get("HF_TOKEN", "")
     if not hf_token:
         print("Warning: HF_TOKEN not set. Set it with: export HF_TOKEN=hf_...")
 
-    print(f"Loading {args.model_id} with 4-bit quantization...")
     model, processor = load_model(args.model_id, hf_token)
-    print(f"Model loaded. GPU: {torch.cuda.memory_allocated(0)/1e9:.1f}GB used")
+    print(f"Model loaded. GPU: {torch.cuda.memory_allocated(0)/1e9:.1f} GB used")
 
     src = Path(args.src_file).read_text().splitlines()
     ref = Path(args.ref_file).read_text().splitlines()
     if args.max_lines:
         src, ref = src[:args.max_lines], ref[:args.max_lines]
-    print(f"Translating {len(src)} lines ({args.src_lang} → {args.tgt_lang})...")
+    print(f"Translating {len(src)} lines ({args.src_lang} → {args.tgt_lang})…")
 
     hyps = [
-        translate_one(model, processor, line, args.src_lang, args.tgt_lang)
+        translate_one(model, processor, line, args.src_lang, args.tgt_lang,
+                      max_new_tokens=args.max_new_tokens)
         for line in tqdm(src, desc="Translating")
     ]
 
