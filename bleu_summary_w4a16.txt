@@ -1,0 +1,9 @@
+Model: GoedelMachines/diffusiongemma-26B-A4B-w4a16
+Total generation time: 106.4 min
+
+en-ja: BLEU 32.84 (2000 lines)
+en-ru: BLEU 24.61 (2000 lines)
+en-zh: BLEU 20.57 (2000 lines)
+ja-en: BLEU 24.52 (2000 lines)
+ru-en: BLEU 37.62 (991 lines)
+zh-en: BLEU 24.62 (1875 lines)

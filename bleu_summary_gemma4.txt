@@ -1,0 +1,12 @@
+Model: google/gemma-4-26B-A4B-it
+Total generation time: 157.7 min
+
+en-ru: BLEU 26.91 (2000 lines)
+ru-en: BLEU 39.40 (991 lines)
+en-ja: BLEU 29.18 (2000 lines)
+ja-en: BLEU 24.58 (2000 lines)
+en-zh: BLEU 20.57 (2000 lines)
+zh-en: BLEU 24.60 (1875 lines)
+
+Results CSV: /root/diffusiongemma_wmt_results_gemma4.csv
+Summary: /root/bleu_summary_gemma4.txt
